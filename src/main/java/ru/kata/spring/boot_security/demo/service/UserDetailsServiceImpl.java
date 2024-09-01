@@ -1,5 +1,6 @@
 package ru.kata.spring.boot_security.demo.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -40,7 +41,8 @@ public class UserDetailsServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public User getUserById(int id) {
-        return userRepository.findByIdWithRoles(id);
+        return userRepository.findByIdWithRoles(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
     }
 
     @Override
@@ -52,6 +54,7 @@ public class UserDetailsServiceImpl implements UserDetailsService, UserService {
 
     @Transactional
     public void updateUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 

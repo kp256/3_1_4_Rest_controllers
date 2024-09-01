@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +13,7 @@ import ru.kata.spring.boot_security.demo.service.UserService;
 
 @Controller
 @RequestMapping("/user")
+@PreAuthorize("hasRole('ROLE_USER')")
 public class UserController {
     private final UserService userService;
 
@@ -25,6 +27,6 @@ public class UserController {
         String username = authentication.getName();
         User user = userService.findByUsername(username);
         model.addAttribute("user", user);
-        return "users/user";
+        return "user/profile";
     }
 }

@@ -33,7 +33,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/", "/login").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/user").authenticated()
+                        .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .formLogin(form -> form
@@ -49,7 +49,6 @@ public class WebSecurityConfig {
                 .userDetailsService(userDetailsService)
                 .build();
     }
-
 
 
     @Bean

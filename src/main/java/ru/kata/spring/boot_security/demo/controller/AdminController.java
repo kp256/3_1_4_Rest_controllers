@@ -2,6 +2,8 @@ package ru.kata.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,19 +36,19 @@ public class AdminController {
 
     @GetMapping("/")
     public String redirectToUsers() {
-        return "redirect:/users";
+        return "redirect:admin/users";
     }
 
     @GetMapping("/users")
     public String users(Model model) {
         model.addAttribute("users", userService.getUsers());
-        return "admin/users_page";
+        return "admin/users";
     }
 
-    @GetMapping("/users/show")
+    @GetMapping("/show")
     public String showUser(@RequestParam("id") int id, Model model) {
         model.addAttribute("user", userService.getUserById(id));
-        return "admin/admin_user_page";
+        return "admin/profile";
     }
 
     @GetMapping("/new")
@@ -55,7 +57,7 @@ public class AdminController {
         List<Role> roles = roleService.getAllRoles();
         model.addAttribute("user", user);
         model.addAttribute("roles", roles);
-        return "admin/create_user";
+        return "admin/create";
     }
 
     @PostMapping()
@@ -70,17 +72,29 @@ public class AdminController {
         List<Role> roles = roleService.getAllRoles();
         model.addAttribute("user", user);
         model.addAttribute("roles", roles);
-        return "admin/update_user";
+        return "admin/update";
     }
 
     @PostMapping("/update")
-    public String updateUser(@ModelAttribute("user") User user, @RequestParam("roles") Set<Long> roleIds) {
-        Set<Role> roles = roleService.getAllRoles().stream()
-                .filter(role -> roleIds.contains(role.getId()))
-                .collect(Collectors.toSet());
-        user.setRoles(roles);
-        userService.updateUser(user);
-        return "redirect:/users";
+    public String updateUser(@ModelAttribute("user") User user,
+                             @RequestParam(value = "roles", required = false) Set<Long> roleIds) {
+        User existingUser = userService.getUserById(user.getId());
+        if (user.getUsername() != null && !user.getUsername().isEmpty()) {
+            existingUser.setUsername(user.getUsername());
+        }
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        if (roleIds != null) {
+            Set<Role> roles = roleService.getAllRoles().stream()
+                    .filter(role -> roleIds.contains(role.getId()))
+                    .collect(Collectors.toSet());
+            existingUser.setRoles(roles);
+        }
+        userService.updateUser(existingUser);
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/delete")
