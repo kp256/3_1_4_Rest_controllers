@@ -22,4 +22,9 @@ public class RoleServiceImpl implements RoleService {
     public List<Role> getAllRoles() {
         return roleRepository.findAll();
     }
+
+    @Override
+    public String getAllRolesString() {
+        return getAllRoles().toString();
+    }
 }

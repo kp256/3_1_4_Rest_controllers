@@ -32,8 +32,8 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/", "/login").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/user/**").hasAnyAuthority("USER", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .formLogin(form -> form
@@ -49,7 +49,6 @@ public class WebSecurityConfig {
                 .userDetailsService(userDetailsService)
                 .build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

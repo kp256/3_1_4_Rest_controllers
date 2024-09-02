@@ -27,6 +27,7 @@ public class UserController {
         String username = authentication.getName();
         User user = userService.findByUsername(username);
         model.addAttribute("user", user);
+        model.addAttribute("roles", user.getAuthorities());
         return "user/profile";
     }
 }
