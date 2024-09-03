@@ -1,6 +1,5 @@
 package ru.kata.spring.boot_security.demo.services;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -8,6 +7,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.kata.spring.boot_security.demo.exeption_handling.NoSuchUserException;
 import ru.kata.spring.boot_security.demo.models.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
 
@@ -42,7 +42,7 @@ public class UserDetailsServiceImpl implements UserDetailsService, UserService {
     @Override
     public User getUserById(int id) {
         return userRepository.findByIdWithRoles(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new NoSuchUserException("User not found with id: " + id));
     }
 
     @Override

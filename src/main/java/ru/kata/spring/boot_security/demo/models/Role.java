@@ -1,5 +1,6 @@
 package ru.kata.spring.boot_security.demo.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,6 +35,7 @@ public class Role implements GrantedAuthority {
         return role;
     }
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users = new HashSet<>();
 

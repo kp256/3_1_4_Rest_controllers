@@ -26,26 +26,39 @@ public class WebSecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        return http
+//                .csrf(AbstractHttpConfigurer::disable)
+//                .authorizeHttpRequests(request -> request
+//                        .requestMatchers("/", "/login").permitAll()
+//                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+//                        .requestMatchers("/user/**").hasAnyAuthority("USER", "ADMIN")
+//                        .anyRequest().denyAll()
+//                )
+//                .formLogin(form -> form
+//                        .loginPage("/login")
+//                        .successHandler(successUserHandler)
+//                        .permitAll()
+//                )
+//                .logout(logout -> logout
+//                        .logoutUrl("/logout")
+//                        .logoutSuccessUrl("/login")
+//                        .permitAll()
+//                )
+//                .userDetailsService(userDetailsService)
+//                .build();
+//    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // Отключение CSRF защиты (для тестирования)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/", "/login").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/user/**").hasAnyAuthority("USER", "ADMIN")
-                        .anyRequest().denyAll()
+                        .anyRequest().permitAll() // Разрешить все запросы без авторизации
                 )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .successHandler(successUserHandler)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login")
-                        .permitAll()
-                )
+                .formLogin(AbstractHttpConfigurer::disable) // Отключить форму логина
+                .logout(AbstractHttpConfigurer::disable) // Отключить логаут
                 .userDetailsService(userDetailsService)
                 .build();
     }
