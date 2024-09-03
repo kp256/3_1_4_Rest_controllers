@@ -1,4 +1,4 @@
-package ru.kata.spring.boot_security.demo.model;
+package ru.kata.spring.boot_security.demo.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
