@@ -1,4 +1,4 @@
-const URL = "http://localhost:8080/api"
+const URL = "http://localhost:8080/api";
 
 const userFetchService = {
     head: {
@@ -11,18 +11,39 @@ const userFetchService = {
     getUser: async (id) => await fetch(URL + `/admin/users/${id}`),
     saveUser: async (user) => {
         const method = user.id ? 'PUT' : 'POST';
-        await fetch(URL + '/admin/users', {
-                method: 'POST',
+        try {
+            const response = await fetch(URL + '/admin/users', {
+                method: method,
                 headers: userFetchService.head,
                 body: JSON.stringify(user)
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to save user: ${errorText}`);
             }
-        )
+            return response;
+        } catch (error) {
+            console.error('Error saving user:', error);
+            throw error;
+        }
     },
-    deleteUser: async (id) => await fetch(URL + `/admin/users/${id}`, {
-        method: 'DELETE',
-        headers: userFetchService.head
-    })
-}
+    deleteUser: async (id) => {
+        try {
+            const response = await fetch(URL + `/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: userFetchService.head
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to delete user: ${errorText}`);
+            }
+            return response;
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            throw error;
+        }
+    }
+};
 
 class User {
     constructor(id, username, password, roles) {
@@ -36,35 +57,6 @@ class User {
     }
 }
 
-
-// async function getAuth() {
-//     try {
-//         let response = await userFetchService.getAuthUser();
-//         if (!response.ok) throw new Error('Failed to fetch authenticated user');
-//
-//         let authUser = await response.json();
-//         const authUsername = document.querySelector('#authUsername');
-//         const authRoles = document.querySelector('#authRoles');
-//         const authInfo = document.querySelector('#authInfo');
-//         const columns = authInfo.children;
-//
-//         authUsername.innerText = authUser.username;
-//         const rolesString = getRoles(authUser.roles);
-//         authRoles.innerText = rolesString;
-//         setUserRow(columns, authUser);
-//
-//         if (rolesString.includes('ADMIN')) {
-//             await getUsers();
-//         } else {
-//             document.querySelector('#user-panel').classList.add("show", "active");
-//             $('#v-pills-tab a[href="#user-panel"]').tab('show');
-//             document.querySelector("#v-pills-home").remove();
-//             document.querySelector("#v-pills-home-tab").remove();
-//         }
-//     } catch (error) {
-//         console.error('Error fetching authenticated user:', error);
-//     }
-// }
 async function getAuth() {
     try {
         let response = await userFetchService.getAuthUser();
@@ -89,10 +81,12 @@ async function getAuth() {
             await getUsers();
         } else {
             document.querySelector('#user-panel').classList.add("show", "active");
-            $('#v-pills-tab a[href="#user-panel"]').tab('show');
-            document.querySelector("#v-pills-home").remove();
-            document.querySelector("#v-pills-home-tab").remove();
+            document.querySelector('#admin-panel-tab').classList.remove('active');
+            document.querySelector('#user-panel-tab').classList.add('active');
         }
+
+        updateUserPanel(authUser);
+
     } catch (error) {
         console.error('Error fetching authenticated user:', error);
     }
@@ -108,18 +102,19 @@ async function handlerUserButton(event) {
             let user = await response.json();
 
             if (typeButton === 'edit') {
-                const editForm = document.querySelector('#editForm')
+                const editForm = document.querySelector('#editForm');
                 clearValidateMsg(editForm.elements);
                 inputModal(user, editForm);
 
                 const editBtn = document.querySelector('#editBtn');
-                editBtn.removeEventListener('click', handlerEditButton); // Prevent duplicate handlers
+                editBtn.removeEventListener('click', handlerEditButton);
                 editBtn.addEventListener('click', handlerEditButton);
             } else if (typeButton === 'delete') {
-                inputModal(user, document.querySelector('#deleteForm'));
+                const deleteForm = document.querySelector('#deleteForm');
+                inputModal(user, deleteForm);
 
                 const deleteBtn = document.querySelector('#deleteBtn');
-                deleteBtn.removeEventListener('click', handlerDeleteButton); // Prevent duplicate handlers
+                deleteBtn.removeEventListener('click', handlerDeleteButton);
                 deleteBtn.addEventListener('click', handlerDeleteButton);
             }
         } catch (error) {
@@ -137,9 +132,9 @@ async function handlerEditButton(event) {
     const data = new User(elements.id.value, elements.username.value, elements.password.value, roles);
 
     try {
-        let response = await userFetchService.saveUser(data);
-        if (!response.ok) throw new Error('Failed to save user');
-        $('#editUser').modal('hide');
+        await userFetchService.saveUser(data);
+        document.querySelector('#editUser').classList.remove('show');
+        document.querySelector('#editUser').classList.remove('fade');
         await getUsers();
     } catch (error) {
         console.error('Error saving user:', error);
@@ -148,37 +143,51 @@ async function handlerEditButton(event) {
 
 async function handlerDeleteButton(event) {
     event.preventDefault();
-    const id = event.target.form.id.value;  // Получение id пользователя
+    const id = document.querySelector('#idDelete').value;
 
     if (!id) {
-        console.error("ID пользователя не установлен.");
-        return;  // Если id отсутствует, не выполняем запрос
+        console.error("User ID is not set.");
+        return;
     }
 
     try {
-        let response = await userFetchService.deleteUser(id);
-        if (!response.ok) throw new Error('Failed to delete user');
-        $('#delUser').modal('hide');
+        await userFetchService.deleteUser(id);
+        document.querySelector('#delUser').classList.remove('show');
+        document.querySelector('#delUser').classList.remove('fade');
         await getUsers();
     } catch (error) {
         console.error('Error deleting user:', error);
     }
 }
 
-
 async function handlerAddButton(event) {
     event.preventDefault();
     const elements = event.target.form.elements;
-    if (!validateForm(elements)) return;
 
-    const roles = [{name: elements.name.value}];
-    const data = new User(null, elements.username.value, elements.password.value, roles);
+    const usernameElement = elements.username || elements.create_username;
+    const passwordElement = elements.password || elements.create_password;
+    const rolesElement = elements.roles || elements.createRoles;
+
+    if (!usernameElement || !passwordElement || !rolesElement || !validateForm({
+        username: usernameElement,
+        password: passwordElement
+    })) return;
+
+    const roles = Array.from(rolesElement.options)
+        .filter(option => option.selected)
+        .map(option => ({ id: rolesMap[option.value] }));
+
+    const data = {
+        username: usernameElement.value,
+        password: passwordElement.value,
+        roles: roles
+    };
 
     try {
-        let response = await userFetchService.saveUser(data);
-        if (!response.ok) throw new Error('Failed to add new user');
+        await userFetchService.saveUser(data);
         clearAddForm();
-        $('#tab a[href="#users-table"]').tab('show');
+        const usersTableTab = document.querySelector('#users-table-tab');
+        usersTableTab.click();
         await getUsers();
     } catch (error) {
         console.error('Error adding user:', error);
@@ -186,24 +195,30 @@ async function handlerAddButton(event) {
 }
 
 function clearValidateMsg(formElements) {
-    formElements.username.classList.remove('is-invalid');
-    formElements.password.classList.remove('is-invalid');
-    formElements.name.classList.remove('is-invalid');
+    if (formElements.username) {
+        formElements.username.classList.remove('is-invalid');
+    }
+    if (formElements.password) {
+        formElements.password.classList.remove('is-invalid');
+    }
+    if (formElements.name) {
+        formElements.name.classList.remove('is-invalid');
+    }
 }
 
 function validateForm(formElements) {
     let check = true;
     clearValidateMsg(formElements);
 
-    if (formElements.username.value.length < 1) {
+    if (formElements.username && formElements.username.value.length < 1) {
         formElements.username.classList.add('is-invalid');
         check = false;
     }
-    if (formElements.password.value.length < 1) {
+    if (formElements.password && formElements.password.value.length < 1) {
         formElements.password.classList.add('is-invalid');
         check = false;
     }
-    if (formElements.name.value.length < 1) {
+    if (formElements.name && formElements.name.value.length < 1) {
         formElements.name.classList.add('is-invalid');
         check = false;
     }
@@ -233,7 +248,7 @@ function inputModal(user, element) {
     element[1].value = user.username;
     element[2].value = ''; // Оставляем пароль пустым
     element[3].value = user.roles.map(role => role.id).join(','); // ID ролей
-    element[4].value = getRoles(user.roles); // Имена ролей
+    element[4].value = "Delete";
 }
 
 async function getUsers() {
@@ -266,4 +281,30 @@ async function getUsers() {
     }
 }
 
+async function updateUserPanel(user) {
+    const userId = document.querySelector('#userId span');
+    const userName = document.querySelector('#userName span');
+    const userRole = document.querySelector('#userRole span');
+
+    userId.innerText = user.id;
+    userName.innerText = user.username;
+    userRole.innerText = getRoles(user.roles);
+}
+
+let rolesMap = {};
+
+async function fetchRoles() {
+    try {
+        const response = await fetch('/api/admin/roles');
+        if (!response.ok) throw new Error('Failed to fetch roles');
+        const roles = await response.json();
+        roles.forEach(role => {
+            rolesMap[role.role] = role.id;
+        });
+    } catch (error) {
+        console.error('Error fetching roles:', error);
+    }
+}
+
+fetchRoles(); // Call this function on initialization
 getAuth();
