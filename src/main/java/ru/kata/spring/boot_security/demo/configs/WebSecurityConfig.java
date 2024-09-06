@@ -9,57 +9,31 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import ru.kata.spring.boot_security.demo.services.UserDetailsServiceImpl;
 
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    private final AuthenticationSuccessHandler successUserHandler;
-    private final UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
-    public WebSecurityConfig(AuthenticationSuccessHandler successUserHandler, UserDetailsServiceImpl userDetailsService) {
-        this.successUserHandler = successUserHandler;
-        this.userDetailsService = userDetailsService;
-    }
-
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        return http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(request -> request
-//                        .requestMatchers("/", "/login").permitAll()
-//                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-//                        .requestMatchers("/user/**").hasAnyAuthority("USER", "ADMIN")
-//                        .anyRequest().denyAll()
-//                )
-//                .formLogin(form -> form
-//                        .loginPage("/login")
-//                        .successHandler(successUserHandler)
-//                        .permitAll()
-//                )
-//                .logout(logout -> logout
-//                        .logoutUrl("/logout")
-//                        .logoutSuccessUrl("/login")
-//                        .permitAll()
-//                )
-//                .userDetailsService(userDetailsService)
-//                .build();
-//    }
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable) // Отключение CSRF защиты (для тестирования)
+//                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .anyRequest().permitAll() // Разрешить все запросы без авторизации
+                        .requestMatchers("/","/login").permitAll()
+                        .requestMatchers("/admin/**","/api/**").hasAuthority("ADMIN")
+                        .requestMatchers("/user", "/api/user").hasAnyAuthority("USER", "ADMIN")
+                        .anyRequest().hasAnyAuthority("USER", "ADMIN")
                 )
-                .formLogin(AbstractHttpConfigurer::disable) // Отключить форму логина
-                .logout(AbstractHttpConfigurer::disable) // Отключить логаут
-                .userDetailsService(userDetailsService)
+                .formLogin(form -> form
+                        .defaultSuccessUrl("/")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login")
+                        .permitAll()
+                )
                 .build();
     }
 

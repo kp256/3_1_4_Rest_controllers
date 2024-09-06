@@ -12,12 +12,10 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@Component
 @Entity
 @Table(name = "roles")
 @Getter

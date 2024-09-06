@@ -1,16 +1,18 @@
 package ru.kata.spring.boot_security.demo.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.kata.spring.boot_security.demo.exeption_handling.NoSuchUserException;
 import ru.kata.spring.boot_security.demo.services.UserService;
 import ru.kata.spring.boot_security.demo.models.User;
 
@@ -18,8 +20,6 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/admin/api")
-@PreAuthorize("hasRole('ROLE_ADMIN')")
 public class RESTController {
 
     private final UserService userService;
@@ -29,49 +29,37 @@ public class RESTController {
         this.userService = userService;
     }
 
-    /*
-    GET     /users               все пользователи
-    GET     /users/{user_id}     получение одного пользователя
-    POST    /users               добавление пользователя
-    PUT     /users               изменение пользователя
-    DELETE  /users/{user_id}     удаление пользователя
-     */
-
-    @GetMapping("/users")
-    public List<User> getUsers() {
-        return userService.getUsers();
+    @GetMapping("api/user")
+    public ResponseEntity<User> getAuthorizedUser(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByUsername(userDetails.getUsername());
+        return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/users/{id}")
-    public User getUser(@PathVariable int id) {
-        User user = userService.getUserById(id);
-        if (user == null) {
-            throw new NoSuchUserException("No found user with id " + id);
-        }
-        return user;
+    @GetMapping("/api/admin/users")
+    public ResponseEntity<List<User>> getUsers() {
+        return ResponseEntity.ok(userService.getUsers());
     }
 
+    @GetMapping("/api/admin/users/{id}")
+    public ResponseEntity<User> getUser(@PathVariable int id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
 
-    @PostMapping("/users")
-    public User createUser(@RequestBody User user) {
+    @PostMapping("/api/admin/users")
+    public ResponseEntity<HttpStatus> createUser(@RequestBody User user) {
         userService.saveUser(user);
-        return user;
+        return ResponseEntity.ok(HttpStatus.CREATED);
     }
 
-    @PutMapping("/users")
-    public User updateUser(@RequestBody User user) {
-        userService.updateUser(user);
-        return user;
+    @PutMapping("/api/admin/users")
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        userService.saveUser(user);
+        return ResponseEntity.ok(user);
     }
 
-    @DeleteMapping("/users/{id}")
-    public String deleteUser(@PathVariable int id) {
-        User user = userService.getUserById(id);
-        if (user == null) {
-            throw new NoSuchUserException("No found user with id " + id);
-        }
-
+    @DeleteMapping("/api/admin/users/{id}")
+    public ResponseEntity<HttpStatus> deleteUser(@PathVariable int id) {
         userService.deleteUserById(id);
-        return "User with id " + id + " was deleted";
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 }
