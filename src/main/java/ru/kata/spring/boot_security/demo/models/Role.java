@@ -30,6 +30,7 @@ public class Role implements GrantedAuthority {
     @Column(name = "role")
     private String role;
 
+    @ToString.Exclude
     @JsonIgnore
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users = new HashSet<>();

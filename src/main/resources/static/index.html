@@ -91,9 +91,11 @@
                                 <form id="addForm">
                                     <label for="create_username" class="form-label fw-bold mb-0">Name</label>
                                     <input type="text" class="form-control" id="create_username" name="username" placeholder="Username">
+                                    <div class="invalid-feedback" id="usernameError"></div>
                                     <br>
                                     <label for="create_password" class="form-label fw-bold mb-0">Password</label>
                                     <input type="password" class="form-control" id="create_password" name="password" placeholder="Password">
+                                    <div class="invalid-feedback" id="passwordError"></div>
                                     <br>
                                     <label for="createRoles" class="form-label fw-bold mb-0">Roles</label>
                                     <label for="createRoles"></label>
@@ -101,6 +103,7 @@
                                         <option value="USER">USER</option>
                                         <option value="ADMIN">ADMIN</option>
                                     </select>
+                                    <div class="invalid-feedback" id="rolesError"></div>
                                     <div>
                                         <button type="submit" class="btn btn-success" id="addBtn">Add new user</button>
                                     </div>
@@ -176,24 +179,25 @@
                         aria-label="Close"></button>
             </div>
             <div class="modal-body w-60 m-auto text-center mb-3 fw-bold">
+
                 <form id="editForm">
-                    <input type="hidden" name="id"/>
-                    <div>
-                        <label for="id" class="form-label">ID</label>
-                        <input type="text" id="id" class="form-control" placeholder="id" readonly="readonly"
-                               disabled/>
-                    </div>
-                    <div>
-                        <label for="username" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="username"
-                               placeholder="Введите имя"><br>
-                        <label for="roles">Roles</label>
-                        <select id="roles" name="roles"
-                                class="form-select" multiple>
-                            <option value="USER">USER</option>
-                            <option value="ADMIN">ADMIN</option>
-                        </select>
-                    </div>
+                    <label for="idEdit" class="form-label">ID</label>
+                    <input type="text" class="form-control" id="idEdit" disabled>
+                    <br>
+                    <label for="usernameEdit" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="usernameEdit" placeholder="Введите имя">
+                    <div class="invalid-feedback" id="usernameError"></div>
+                    <br>
+                    <label for="passwordEdit" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="passwordEdit" placeholder="Введите новый пароль">
+                    <div class="invalid-feedback" id="passwordError"></div>
+                    <br>
+                    <label for="editRoles">Roles</label>
+                    <select id="editRoles" class="form-select" multiple>
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <div class="invalid-feedback" id="rolesError"></div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <input class="btn btn-primary" type="submit" value="Edit" id="editBtn"/>

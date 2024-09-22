@@ -9,6 +9,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -28,9 +30,16 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @NotBlank(message = "Username cannot be empty")
+    @Size(min = 3, max = 30, message = "Username must be between 3 and 30 characters")
     private String username;
+
+    @NotBlank(message = "Password cannot be empty")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
+    @ToString.Exclude
     private String password;
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",

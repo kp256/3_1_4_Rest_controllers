@@ -45,18 +45,6 @@ const userFetchService = {
     }
 };
 
-class User {
-    constructor(id, username, password, roles) {
-        this.id = id;
-        this.username = username;
-        this.password = password;
-        this.roles = roles.map(role => ({
-            id: role.id,
-            role: role.role
-        }));
-    }
-}
-
 async function getAuth() {
     try {
         let response = await userFetchService.getAuthUser();
@@ -85,7 +73,7 @@ async function getAuth() {
             document.querySelector('#user-panel-tab').classList.add('active');
         }
 
-        updateUserPanel(authUser);
+        await updateUserPanel(authUser);
 
     } catch (error) {
         console.error('Error fetching authenticated user:', error);
@@ -103,15 +91,14 @@ async function handlerUserButton(event) {
 
             if (typeButton === 'edit') {
                 const editForm = document.querySelector('#editForm');
-                clearValidateMsg(editForm.elements);
-                inputModal(user, editForm);
+                inputModal(user, editForm, 'edit');
 
                 const editBtn = document.querySelector('#editBtn');
                 editBtn.removeEventListener('click', handlerEditButton);
                 editBtn.addEventListener('click', handlerEditButton);
             } else if (typeButton === 'delete') {
                 const deleteForm = document.querySelector('#deleteForm');
-                inputModal(user, deleteForm);
+                inputModal(user, deleteForm, 'delete');
 
                 const deleteBtn = document.querySelector('#deleteBtn');
                 deleteBtn.removeEventListener('click', handlerDeleteButton);
@@ -123,19 +110,73 @@ async function handlerUserButton(event) {
     }
 }
 
-async function handlerEditButton(event) {
+async function handlerAddButton(event) {
     event.preventDefault();
-    const elements = event.target.form.elements;
-    if (!validateForm(elements)) return;
 
-    const roles = [{roleId: elements.roleId.value, name: elements.name.value}];
-    const data = new User(elements.id.value, elements.username.value, elements.password.value, roles);
+    const elements = event.target.form.elements;
+
+    const roles = Array.from(elements.createRoles.options)
+        .filter(option => option.selected)
+        .map(option => ({ id: rolesMap[option.value], role: option.value }));
+
+    const data = {
+        username: elements.create_username.value.trim(),
+        password: elements.create_password.value.trim(),
+        roles: roles
+    };
 
     try {
         await userFetchService.saveUser(data);
-        document.querySelector('#editUser').classList.remove('show');
-        document.querySelector('#editUser').classList.remove('fade');
+        clearAddForm();
+        const usersTableTab = document.querySelector('#show-users-table');
+        usersTableTab.click();  // Переходим на вкладку списка пользователей
         await getUsers();
+    } catch (error) {
+        console.error('Error adding user:', error);
+    }
+}
+
+async function handlerEditButton(event) {
+    event.preventDefault();
+
+    const elements = event.target.form.elements;
+
+    const username = elements.usernameEdit.value.trim();
+    const password = elements.passwordEdit.value.trim();
+
+    const errors = [];
+
+    if (username.length < 3 || username.length > 30) {
+        errors.push("Username must be between 3 and 30 characters.");
+    }
+    if (password && (password.length < 6 || password.length > 100)) {
+        errors.push("Password must be between 6 and 100 characters.");
+    }
+    if (elements.editRoles.selectedOptions.length === 0) {
+        errors.push("At least one role must be selected.");
+    }
+
+    if (errors.length > 0) {
+        alert(errors.join("\n"));
+        return;
+    }
+
+    const roles = Array.from(elements.editRoles.options)
+        .filter(option => option.selected)
+        .map(option => ({ id: rolesMap[option.value], role: option.value }));
+
+    const data = {
+        id: elements.idEdit.value,
+        username: username,
+        password: password || null,
+        roles: roles
+    };
+
+    try {
+        await userFetchService.saveUser(data);
+        const modal = bootstrap.Modal.getInstance(document.querySelector('#editUser'));
+        modal.hide();  // Закрываем модальное окно
+        await getUsers();  // Обновляем список пользователей
     } catch (error) {
         console.error('Error saving user:', error);
     }
@@ -144,86 +185,19 @@ async function handlerEditButton(event) {
 async function handlerDeleteButton(event) {
     event.preventDefault();
     const id = document.querySelector('#idDelete').value;
-
     if (!id) {
         console.error("User ID is not set.");
         return;
     }
-
     try {
         await userFetchService.deleteUser(id);
-        document.querySelector('#delUser').classList.remove('show');
-        document.querySelector('#delUser').classList.remove('fade');
+        const deleteModal = bootstrap.Modal.getInstance(document.querySelector('#delUser'));
+        deleteModal.hide();
+
         await getUsers();
     } catch (error) {
         console.error('Error deleting user:', error);
     }
-}
-
-async function handlerAddButton(event) {
-    event.preventDefault();
-    const elements = event.target.form.elements;
-
-    const usernameElement = elements.username || elements.create_username;
-    const passwordElement = elements.password || elements.create_password;
-    const rolesElement = elements.roles || elements.createRoles;
-
-    if (!usernameElement || !passwordElement || !rolesElement || !validateForm({
-        username: usernameElement,
-        password: passwordElement
-    })) return;
-
-    const roles = Array.from(rolesElement.options)
-        .filter(option => option.selected)
-        .map(option => ({ id: rolesMap[option.value] }));
-
-    const data = {
-        username: usernameElement.value,
-        password: passwordElement.value,
-        roles: roles
-    };
-
-    try {
-        await userFetchService.saveUser(data);
-        clearAddForm();
-        const usersTableTab = document.querySelector('#users-table-tab');
-        usersTableTab.click();
-        await getUsers();
-    } catch (error) {
-        console.error('Error adding user:', error);
-    }
-}
-
-function clearValidateMsg(formElements) {
-    if (formElements.username) {
-        formElements.username.classList.remove('is-invalid');
-    }
-    if (formElements.password) {
-        formElements.password.classList.remove('is-invalid');
-    }
-    if (formElements.name) {
-        formElements.name.classList.remove('is-invalid');
-    }
-}
-
-function validateForm(formElements) {
-    let check = true;
-    clearValidateMsg(formElements);
-
-    if (formElements.username && formElements.username.value.length < 1) {
-        formElements.username.classList.add('is-invalid');
-        check = false;
-    }
-    if (formElements.password && formElements.password.value.length < 1) {
-        formElements.password.classList.add('is-invalid');
-        check = false;
-    }
-    if (formElements.name && formElements.name.value.length < 1) {
-        formElements.name.classList.add('is-invalid');
-        check = false;
-    }
-
-    return check;
 }
 
 function clearAddForm() {
@@ -243,12 +217,24 @@ function getRoles(listRoles) {
     return listRoles.map(role => role.role).join(' ');
 }
 
-function inputModal(user, element) {
-    element[0].value = user.id;
-    element[1].value = user.username;
-    element[2].value = ''; // Оставляем пароль пустым
-    element[3].value = user.roles.map(role => role.id).join(','); // ID ролей
-    element[4].value = "Delete";
+function inputModal(user, formElement, type) {
+    formElement[0].value = user.id;
+    formElement[1].value = user.username;
+
+    if (type === 'edit') {
+        // Оставляем пароль пустым при редактировании
+        formElement[2].value = '';
+
+        // Устанавливаем роли
+        const rolesOptions = formElement[3].options;
+        Array.from(rolesOptions).forEach(option => {
+            option.selected = user.roles.some(role => role.role === option.value);
+        });
+
+        formElement[4].value = "Edit";  // Устанавливаем текст кнопки
+    } else if (type === 'delete') {
+        formElement[4].value = "Delete";  // Устанавливаем текст кнопки
+    }
 }
 
 async function getUsers() {
@@ -306,5 +292,77 @@ async function fetchRoles() {
     }
 }
 
-fetchRoles(); // Call this function on initialization
+document.getElementById('addForm').addEventListener('input', validateAddForm);
+
+function validateAddForm() {
+    const username = document.getElementById('create_username');
+    const password = document.getElementById('create_password');
+    const roles = document.getElementById('createRoles');
+
+    let valid = true;
+
+    // Сброс ошибок
+    document.getElementById('usernameError').innerText = '';
+    document.getElementById('passwordError').innerText = '';
+    document.getElementById('rolesError').innerText = '';
+
+    // Проверка username
+    if (username.value.trim().length < 3 || username.value.trim().length > 30) {
+        document.getElementById('usernameError').innerText = "Username must be between 3 and 30 characters.";
+        valid = false;
+    }
+
+    // Проверка password
+    if (password.value.trim().length < 6 || password.value.trim().length > 100) {
+        document.getElementById('passwordError').innerText = "Password must be between 6 and 100 characters.";
+        valid = false;
+    }
+
+    // Проверка ролей
+    if (Array.from(roles.selectedOptions).length === 0) {
+        document.getElementById('rolesError').innerText = "At least one role must be selected.";
+        valid = false;
+    }
+
+    // Включение/отключение кнопки отправки
+    document.getElementById('addBtn').disabled = !valid;
+}
+
+document.getElementById('editForm').addEventListener('input', validateEditForm);
+
+function validateEditForm() {
+    const username = document.getElementById('usernameEdit');
+    const password = document.getElementById('passwordEdit');
+    const roles = document.getElementById('editRoles');
+
+    let valid = true;
+
+    // Сброс ошибок
+    document.getElementById('usernameEditError').innerText = '';
+    document.getElementById('passwordEditError').innerText = '';
+    document.getElementById('rolesEditError').innerText = '';
+
+    // Проверка username
+    if (username.value.trim().length < 3 || username.value.trim().length > 30) {
+        document.getElementById('usernameEditError').innerText = "Username must be between 3 and 30 characters.";
+        valid = false;
+    }
+
+    // Проверка password
+    if (password.value && (password.value.trim().length < 6 || password.value.trim().length > 100)) {
+        document.getElementById('passwordEditError').innerText = "Password must be between 6 and 100 characters.";
+        valid = false;
+    }
+
+    // Проверка ролей
+    if (Array.from(roles.selectedOptions).length === 0) {
+        document.getElementById('rolesEditError').innerText = "At least one role must be selected.";
+        valid = false;
+    }
+
+    // Включение/отключение кнопки отправки
+    document.getElementById('editBtn').disabled = !valid;
+}
+
+fetchRoles();
 getAuth();

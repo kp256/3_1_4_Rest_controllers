@@ -43,7 +43,6 @@ public class UserServiceImpl implements UserService {
     public void saveUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Загрузка существующих ролей из базы данных по их ID
         Set<Role> roles = new HashSet<>();
         for (Role role : user.getRoles()) {
             Role existingRole = roleRepository.findById(role.getId())
