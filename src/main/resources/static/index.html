@@ -10,6 +10,9 @@
         .no-padding {
             padding: 0 !important;
         }
+        .d-none {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="container">
@@ -30,10 +33,10 @@
     <nav class="col-2 no-padding">
         <ul class="nav flex-column nav-pills">
             <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#admin-panel" aria-current="page">Admin</a>
+                <a id="adminTab" class="nav-link" data-bs-toggle="tab" href="#admin-panel" aria-current="page">Admin</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#user-panel">User</a>
+                <a id="userTab" class="nav-link" data-bs-toggle="tab" href="#user-panel">User</a>
             </li>
         </ul>
     </nav>
@@ -91,11 +94,11 @@
                                 <form id="addForm">
                                     <label for="create_username" class="form-label fw-bold mb-0">Name</label>
                                     <input type="text" class="form-control" id="create_username" name="username" placeholder="Username">
-                                    <div class="invalid-feedback" id="usernameError"></div>
+                                    <div class="invalid-feedback" id="newusernameError"></div>
                                     <br>
                                     <label for="create_password" class="form-label fw-bold mb-0">Password</label>
                                     <input type="password" class="form-control" id="create_password" name="password" placeholder="Password">
-                                    <div class="invalid-feedback" id="passwordError"></div>
+                                    <div class="invalid-feedback" id="newpasswordError"></div>
                                     <br>
                                     <label for="createRoles" class="form-label fw-bold mb-0">Roles</label>
                                     <label for="createRoles"></label>
@@ -103,7 +106,7 @@
                                         <option value="USER">USER</option>
                                         <option value="ADMIN">ADMIN</option>
                                     </select>
-                                    <div class="invalid-feedback" id="rolesError"></div>
+                                    <div class="invalid-feedback" id="newrolesError"></div>
                                     <div>
                                         <button type="submit" class="btn btn-success" id="addBtn">Add new user</button>
                                     </div>
